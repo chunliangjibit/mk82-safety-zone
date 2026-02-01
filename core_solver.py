@@ -114,7 +114,12 @@ def generate_rays_jit(
             d_stop = calculate_d_stop(v_total, k, mass, energy_threshold)
             
             if d_stop > 0:
-                theta, phi = spherical_bin(vf_x, vf_y, vf_z)
+                # IMPORTANT: Binning must be done based on the fragment's EMISSION direction
+                # relative to the center of explosion in the static-ish frame?
+                # Actually, the safety envelope is a bubble around the point of burst.
+                # So we should bin based on (v_frag_gx, v_frag_gy, v_frag_gz) 
+                # because THOSE vectors define where the fragment goes relative to (0,0,0) point of burst.
+                theta, phi = spherical_bin(v_frag_gx, v_frag_gy, v_frag_gz)
                 
                 # Store
                 out_rays[count_idx, 0] = theta
