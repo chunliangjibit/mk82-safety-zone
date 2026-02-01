@@ -260,6 +260,58 @@ def plot_engineering_views(envelope, output_path):
     plt.savefig(output_path, dpi=150, facecolor='white')
     print(f"Saved Engineering Plot to {output_path}")
 
+def plot_tail_focus(envelope, output_path):
+    """
+    Specifically zooms on the tail sector and provides detailed technical annotation.
+    """
+    n_theta, n_phi = envelope.shape
+    theta = np.linspace(0, np.pi, n_theta)
+    
+    # Side view slice (Phi=0 and Pi)
+    mid_phi = n_phi // 2
+    r_tail = envelope[:, mid_phi]
+    
+    # Indices for 15 deg corridor
+    rear_idx = int(n_theta * (15.0 / 180.0))
+    
+    x = r_tail * np.sin(theta)
+    z = r_tail * np.cos(theta)
+    
+    plt.figure(figsize=(12, 8))
+    plt.style.use('default')
+    
+    # Plot Full Curve for context (faint)
+    plt.plot(x, z, color='gray', alpha=0.3, label='Full Envelope Context')
+    
+    # Highlight Tail Sector (Bold Green)
+    plt.plot(x[:rear_idx], z[:rear_idx], color='green', linewidth=4, label='15° Tail Safe Zone')
+    
+    # Annotate Safe Dist
+    r_safe = np.max(envelope[:rear_idx, :])
+    plt.scatter([0], [r_safe], color='green', s=100, zorder=5)
+    plt.annotate(f'Tail Safe: {r_safe:.2f} m', 
+                 xy=(0, r_safe), xytext=(200, r_safe + 100),
+                 arrowprops=dict(facecolor='green', shrink=0.05, width=2),
+                 fontsize=14, fontweight='bold', color='green')
+    
+    # Release Point
+    plt.scatter([0], [0], color='red', marker='*', s=200, label='Burst Point')
+    
+    plt.title("Tail Separation Focus (Escape Corridor Analysis)", fontsize=16, fontweight='bold')
+    plt.xlabel("Lateral Offset (m)")
+    plt.ylabel("Separation Altitude (m)")
+    plt.grid(True, linestyle=':', alpha=0.7)
+    plt.axis('equal')
+    
+    # Zoom logic: focus on the tailward half
+    plt.xlim(-500, 500)
+    plt.ylim(-100, r_safe * 1.2)
+    
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150)
+    print(f"Saved Tail Focus Plot to {output_path}")
+
 def main():
     config_path = "config.yaml"
     with open(config_path, 'r', encoding='utf-8') as f:
@@ -276,10 +328,13 @@ def main():
     # 1. Interactive 3D Plot (HTML)
     plot_3d_envelope(envelope, os.path.join(output_dir, "envelope_3d.html"))
     
-    # 2. Engineering 4-View (PNG)
-    plot_engineering_views(envelope, os.path.join(output_dir, "envelope_engineering.png"))
+    # 2. Global Overview (PNG)
+    plot_engineering_views(envelope, os.path.join(output_dir, "envelope_global.png"))
     
-    # 3. 2D Slices (PNG)
+    # 3. Tail Focus Analysis (PNG)
+    plot_tail_focus(envelope, os.path.join(output_dir, "envelope_tail_focus.png"))
+    
+    # Legacy side view for backwards compatibility
     plot_2d_slices(envelope, output_dir)
     
     print(f"Max Safe Distance: {np.max(envelope):.2f} m")
