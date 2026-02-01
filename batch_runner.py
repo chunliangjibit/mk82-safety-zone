@@ -29,22 +29,20 @@ def main():
         
     # Load Fragments based on selection
     selection = config.get('selection', {})
-    m_type = selection.get('munition_type', 'Mk82')
-    init_mode = selection.get('initiation', 'Nose')
+    init_mode = selection.get('initiation', 'Nose').lower()
     
-    # Selection Mapping: 
-    # Nose -> C32 (Mk82)
-    # Tail -> C33 (BLU-111)
-    # Per user request: Mk82 Tail is actually Table C-33 BLU-111
-    if init_mode.lower() == 'nose':
+    # Mapping per dataset: 
+    # Nose -> Table C-32 (Mk82 Tritonal)
+    # Tail -> Table C-33 (BLU-111 PBXN-109)
+    if init_mode == 'nose':
         data_file = config['data']['mk82_file']
-        actual_munition = f"{m_type} (Tritonal, Nose)"
+        actual_name = "Mk82 (Tritonal, Nose)"
     else:
         data_file = config['data']['blu111_file']
-        actual_munition = f"{m_type} (PBXN-109, Tail)"
+        actual_name = "BLU-111 (PBXN-109, Tail)"
         
     frag_path = os.path.join(config['data']['output_dir'], data_file)
-    print(f"Loading Fragments for {actual_munition} from {frag_path}...")
+    print(f"Loading Dataset: {actual_name} from {frag_path}...")
     fragments = np.load(frag_path)
     
     # Generate Tasks

@@ -40,7 +40,5 @@ data:
 
 # 任务选择 (Task Selection)
 selection:
-  munition_type: "Mk82"    # [Mk82, BLU-111]
   initiation: "Tail"       # [Nose, Tail] 
-  # Note: Actually Table C-32 is Mk82/Nose, Table C-33 is BLU-111/Tail.
-  # We will use this to select which pre-processed file to load.
+  # Note: Nose -> Table C-32 (Mk82 Tritonal), Tail -> Table C-33 (BLU-111 PBXN-109)

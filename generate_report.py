@@ -35,8 +35,8 @@ def generate_calculation_report(config_path, data_path, output_dir):
         f.write(f"Result Data: {data_path}\n")
         
         selection = config.get('selection', {})
-        f.write(f"Munition Type:  {selection.get('munition_type', 'Mk82')}\n")
-        f.write(f"Initiation:     {selection.get('initiation', 'Nose')}\n\n")
+        init_mode = selection.get('initiation', 'Nose')
+        f.write(f"Initiation Mode: {init_mode}\n\n")
         
         f.write("--------------------------------------------------------\n")
         f.write("1. INPUT PARAMETERS\n")
