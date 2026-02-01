@@ -106,21 +106,23 @@ def generate_rays_jit(
             v_frag_gy = vl_x * 0.0 + vl_y * 1.0 + vl_z * 0.0
             v_frag_gz = vl_x * (-wx) + vl_y * 0.0 + vl_z * wz
             
+            # IMPORTANT: For the Pilot's Safety Envelope, we bin fragments 
+            # based on their direction RELATIVE TO THE BOMB'S FLIGHT PATH.
+            # In our local frame, vl_z is the direction along the bomb's axis (Noseward).
+            # To make Theta=0 the Rear Aspect, we bin relative to -v_stat vector.
+            # Or simpler: bin based on (-vl_x, -vl_y, -vl_z).
+            # This way, a fragment going straight back (vl_z = -v_stat) becomes Theta=0.
+            theta, phi = spherical_bin(-vl_x, -vl_y, -vl_z)
+            
+            # v_total is the scalar speed relative to Earth, used for distance calc
             vf_x = v_frag_gx + vb_x
             vf_y = v_frag_gy + vb_y
             vf_z = v_frag_gz + vb_z
-            
             v_total = math.sqrt(vf_x*vf_x + vf_y*vf_y + vf_z*vf_z)
+            
             d_stop = calculate_d_stop(v_total, k, mass, energy_threshold)
             
             if d_stop > 0:
-                # IMPORTANT: Binning must be done based on the fragment's EMISSION direction
-                # relative to the center of explosion in the static-ish frame?
-                # Actually, the safety envelope is a bubble around the point of burst.
-                # So we should bin based on (v_frag_gx, v_frag_gy, v_frag_gz) 
-                # because THOSE vectors define where the fragment goes relative to (0,0,0) point of burst.
-                theta, phi = spherical_bin(v_frag_gx, v_frag_gy, v_frag_gz)
-                
                 # Store
                 out_rays[count_idx, 0] = theta
                 out_rays[count_idx, 1] = phi
