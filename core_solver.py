@@ -106,12 +106,12 @@ def generate_rays_jit(
             v_frag_gy = vl_x * 0.0 + vl_y * 1.0 + vl_z * 0.0
             v_frag_gz = vl_x * (-wx) + vl_y * 0.0 + vl_z * wz
             
-            # IMPORTANT: For the Pilot's Safety Envelope, we bin fragments 
-            # based on their direction RELATIVE TO THE BOMB'S FLIGHT PATH.
-            # In our local frame, vl_z is the direction along the bomb's axis (Noseward).
-            # To make Theta=0 the Rear Aspect, we bin relative to -v_stat vector.
-            # Or simpler: bin based on (-vl_x, -vl_y, -vl_z).
-            # This way, a fragment going straight back (vl_z = -v_stat) becomes Theta=0.
+            # IMPORTANT: Define Pilot-Centric Coordinates
+            # Static data: vl_z is NOSEWARD (+Z in static frame)
+            # We want Theta=0 to be TAILWARD.
+            # So we bin the vector pointing TAILWARD: (vl_x, vl_y, -vl_z) -> No,
+            # Let's just use the standard: bin(vl_x, vl_y, vl_z) gives Theta=0 for Noseward.
+            # To make Theta=0 Tailward, we bin (-vl_x, -vl_y, -vl_z).
             theta, phi = spherical_bin(-vl_x, -vl_y, -vl_z)
             
             # v_total is the scalar speed relative to Earth, used for distance calc
