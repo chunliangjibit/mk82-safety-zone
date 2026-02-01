@@ -1,0 +1,39 @@
+# Mk82 Safety Envelope Calculation System Configuration
+
+# 物理模型参数 (Physical Constants)
+bomb:
+  mass: 227.0           # kg (500lb)
+  shape_factor: 1.5     # 自然破片形状系数 (Shape Factor)
+  drag_coeff: 1.1       # 破片平均阻力系数 (Drag Coefficient)
+  air_density: 1.225    # kg/m^3 (Sea level standard)
+
+# 目标与判据 (Target & Criteria)
+target:
+  area: 25.0            # m^2 (载机暴露面积 / Vulnerable Area)
+  safe_prob: 0.0001     # 1e-4 (安全概率阈值 / Probability Threshold)
+  energy_threshold: 100 # J (致死动能门限 / Lethal Energy Threshold)
+
+# 扫描范围 (Search Space) - 落速落角范围
+scan:
+  velocity:
+    min: 200.0          # m/s
+    max: 300.0          # m/s
+    step: 10.0          # 步长
+  angle:
+    min: 75.0           # 度 (相对于水平面)
+    max: 90.0           # 度 (垂直)
+    step: 2.5           # 步长
+
+# 计算控制 (Compute Control)
+compute:
+  r_guess_min: 200      # 最小猜测距离 (m)
+  r_guess_max: 3000     # 最大猜测距离 (m)
+  spatial_bins: 72      # 空间角度切分 (360/72 = 5度一档)
+  parallel_workers: -2  # 负数表示 os.cpu_count() - N
+
+# 数据源配置
+data:
+  source_file: "C32-C33.md"
+  output_dir: "data_cache"
+  mk82_file: "mk82_fragments.npy"
+  blu111_file: "blu111_fragments.npy"

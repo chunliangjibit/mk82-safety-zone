@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Data & Output (Large or transient files)
+data_cache/
+*.npy
+*.html
+*.png
+*.obj
+*.txt
+
+# Environments
+.env
+.venv
+env/
+venv/
+.conda/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
