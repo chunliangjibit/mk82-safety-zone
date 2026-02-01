@@ -210,12 +210,21 @@ def plot_engineering_views(envelope, output_path):
     z_tail = Z[0:rear_idx_limit, mid_phi]
     ax_side.plot(x_tail, z_tail, 'g-', linewidth=3, label='Tail Aspect (Safe Corridor)')
     
-    # Annotation for Aircraft Safe Separation
-    # Read from meta or re-calc strictly
+    # Annotation for Global Max and Aircraft Safe Separation
+    r_global_max = np.max(envelope)
     r_safe_tail = np.max(envelope[0:rear_idx_limit, :])
-    ax_side.annotate(f'Aircraft Safe: {r_safe_tail:.1f}m', 
-                     xy=(0, r_safe_tail), xytext=(r_safe_tail/2, r_safe_tail*1.2),
-                     arrowprops=dict(facecolor='black', shrink=0.05, width=1, headwidth=5))
+    
+    # Label Global Max
+    ax_side.annotate(f'Global Max: {r_global_max:.1f}m', 
+                     xy=(r_global_max, 0), xytext=(r_global_max*1.1, r_global_max*0.2),
+                     arrowprops=dict(facecolor='red', shrink=0.05, width=1, headwidth=5),
+                     color='red', fontweight='bold')
+    
+    # Label Aircraft Tail Safe
+    ax_side.annotate(f'Tail Safe: {r_safe_tail:.1f}m', 
+                     xy=(0, r_safe_tail), xytext=(r_safe_tail/2, r_safe_tail*1.3),
+                     arrowprops=dict(facecolor='green', shrink=0.05, width=1, headwidth=5),
+                     color='green')
     
     # Add Reference Plane
     ax_side.scatter([0], [0], color='k', marker='x', s=100, label='Release Point')

@@ -86,26 +86,20 @@ def generate_calculation_report(config_path, data_path, output_dir):
         
         # 1. Global Max Hazard
         max_safe_dist = np.max(envelope)
-        f.write(f"GLOBAL MAX HAZARD DISTANCE: {max_safe_dist:.4f} meters\n")
-        f.write(f"  (Worst case: Side/Front aspect - Ground hazard)\n\n")
+        f.write(f">>> CONSOLIDATED SAFE DISTANCE (OMNIDIRECTIONAL): {max_safe_dist:.4f} m <<<\n")
+        f.write(f"  (Worst case safety boundary across all aspects and conditions)\n\n")
         
-        # 2. Aircraft Safe Separation (Rear Aspect)
-        # Use verified peak from meta file if available, otherwise fallback
+        # 2. Aircraft Safe Separation (Rear Aspect) - Detailed Context
         meta_file = os.path.join(output_dir, "envelope_meta.yaml")
         if os.path.exists(meta_file):
             with open(meta_file, 'r') as mf:
                 meta = yaml.safe_load(mf)
                 dist_aircraft_safe = meta.get('aircraft_safe_dist', 0.0)
         else:
-            # Fallback to percentile if meta not found
-            n_theta, n_phi = envelope.shape
-            rear_sector_deg = 15.0
-            rear_idx_limit = int(n_theta * (rear_sector_deg / 180.0))
-            rear_sector_data = envelope[0:rear_idx_limit, :]
-            dist_aircraft_safe = np.percentile(rear_sector_data, 95)
-        
-        f.write(f">>> AIRCRAFT SAFE SEPARATION: {dist_aircraft_safe:.4f} m <<<\n")
-        f.write(f"  (Tail Aspect < 15.0 deg - Verified pilot safe distance)\n\n")
+            dist_aircraft_safe = 0.0 # Fallback
+
+        f.write(f"REAR ASPECT SAFE SEPARATION (TAIL CORRIDOR): {dist_aircraft_safe:.4f} m\n")
+        f.write(f"  (Specific safety distance for pilot escaping within 15 deg tail cone)\n\n")
 
         f.write("[Grid Statistics]\n")
         f.write(f"  Resolution: {config['compute']['spatial_bins']} x {config['compute']['spatial_bins']}\n")
