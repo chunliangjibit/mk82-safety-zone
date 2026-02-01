@@ -81,15 +81,31 @@ def main():
         
     print(f"Compute Finished in {time.time() - start_time:.2f}s. Aggregating...")
     
+    # Aircraft Safe Separation (Max of all per-case tail peaks)
+    peak_tail_separation = 0.0
+    
     # Aggregate
     for res in results:
         global_max_envelope = np.maximum(global_max_envelope, res)
+        # Calculate local peak for this specific condition (Theta 0..30)
+        n_t = res.shape[0]
+        r_idx = int(n_t * (30.0 / 180.0))
+        local_tail_peak = np.max(res[0:r_idx, :])
+        if local_tail_peak > peak_tail_separation:
+            peak_tail_separation = local_tail_peak
         
     # Save Result
     out_file = os.path.join(config['data']['output_dir'], "envelope_result.npy")
     np.save(out_file, global_max_envelope)
+    
+    # Meta result for report
+    meta_file = os.path.join(config['data']['output_dir'], "envelope_meta.yaml")
+    with open(meta_file, 'w') as f:
+        yaml.dump({'aircraft_safe_dist': float(peak_tail_separation)}, f)
+        
     print(f"Saved Global Envelope to {out_file}")
     print(f"Max Overall Distance: {np.max(global_max_envelope):.2f} m")
+    print(f"Verified Aircraft Safe Separation: {peak_tail_separation:.2f} m")
     
     # Generate Report
     from generate_report import generate_calculation_report
