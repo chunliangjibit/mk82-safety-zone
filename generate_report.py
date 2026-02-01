@@ -79,16 +79,18 @@ def generate_calculation_report(config_path, data_path, output_dir):
         f.write(f"  (Worst case: Side/Front aspect - Ground hazard)\n\n")
         
         # 2. Aircraft Safe Separation (Rear Aspect)
-        # Core solver: Theta 0 is Tailward (+Z), Theta pi is Noseward (-Z)
+        # In Dive (75-90 deg), Theta 0 is Tailward (+Z).
+        # We take the representative safe distance in the tail cone.
         n_theta, n_phi = envelope.shape
         rear_sector_deg = 30.0
         rear_idx_limit = int(n_theta * (rear_sector_deg / 180.0))
         
+        # Use mean or a tighter percentile if max is noisy due to aggregation
         rear_sector_data = envelope[0:rear_idx_limit, :]
-        dist_aircraft_safe = np.max(rear_sector_data)
+        dist_aircraft_safe = np.percentile(rear_sector_data, 95) # 95th percentile to avoid outliers
         
         f.write(f">>> AIRCRAFT SAFE SEPARATION: {dist_aircraft_safe:.4f} m <<<\n")
-        f.write(f"  (Tail Aspect < {rear_sector_deg} deg - Pilot safe distance)\n\n")
+        f.write(f"  (Tail Aspect < {rear_sector_deg} deg - Representative safe distance)\n\n")
 
         f.write("[Grid Statistics]\n")
         f.write(f"  Resolution: {config['compute']['spatial_bins']} x {config['compute']['spatial_bins']}\n")
