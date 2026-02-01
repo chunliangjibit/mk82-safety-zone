@@ -198,9 +198,25 @@ def plot_engineering_views(envelope, output_path):
     mid_phi = n_phi // 2 # Phi ~ 0
     opp_phi = 0 # Phi ~ -pi
     
+    # Calculate indices for Tail Aspect highlight (0-30 deg)
+    rear_sector_deg = 30.0
+    rear_idx_limit = int(n_theta * (rear_sector_deg / 180.0))
+    
     # Use Dark colors: Blue and Red
     ax_side.plot(X[:, mid_phi], Z[:, mid_phi], 'b-', linewidth=1.5, label='Heading 0')
     ax_side.plot(X[:, opp_phi], Z[:, opp_phi], 'r-', linewidth=1.5, label='Heading 180')
+    
+    # Highlight Tail Aspect Sector
+    # Theta 0 to rear_idx_limit
+    x_tail = X[0:rear_idx_limit, mid_phi]
+    z_tail = Z[0:rear_idx_limit, mid_phi]
+    ax_side.plot(x_tail, z_tail, 'g-', linewidth=3, label='Tail Aspect (Safe Corridor)')
+    
+    # Annotation for Aircraft Safe Separation
+    r_safe_tail = np.max(envelope[0:rear_idx_limit, :])
+    ax_side.annotate(f'Aircraft Safe: {r_safe_tail:.1f}m', 
+                     xy=(0, r_safe_tail), xytext=(r_safe_tail/2, r_safe_tail*1.2),
+                     arrowprops=dict(facecolor='black', shrink=0.05, width=1, headwidth=5))
     
     # Add Reference Plane
     ax_side.scatter([0], [0], color='k', marker='x', s=100, label='Release Point')
@@ -208,7 +224,7 @@ def plot_engineering_views(envelope, output_path):
     ax_side.set_title("Side View (XZ Plane)", fontsize=12, fontweight='bold')
     ax_side.set_xlabel("Range (m)")
     ax_side.set_ylabel("Altitude (m)")
-    ax_side.legend(loc='upper right')
+    ax_side.legend(loc='upper right', fontsize='small')
     ax_side.set_aspect('equal')
     ax_side.grid(**grid_style)
 

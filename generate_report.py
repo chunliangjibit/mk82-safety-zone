@@ -72,9 +72,24 @@ def generate_calculation_report(config_path, data_path, output_dir):
         f.write("--------------------------------------------------------\n")
         f.write("3. CALCULATION RESULTS\n")
         f.write("--------------------------------------------------------\n")
-        f.write(f"MAXIMUM SAFE DISTANCE: {max_safe_dist:.4f} meters\n")
-        f.write(f"  (Worst Case across all scanned conditions)\n\n")
         
+        # 1. Global Max Hazard
+        max_safe_dist = np.max(envelope)
+        f.write(f"GLOBAL MAX HAZARD DISTANCE: {max_safe_dist:.4f} meters\n")
+        f.write(f"  (Worst case: Side/Front aspect - Ground hazard)\n\n")
+        
+        # 2. Aircraft Safe Separation (Rear Aspect)
+        # Core solver: Theta 0 is Tailward (+Z), Theta pi is Noseward (-Z)
+        n_theta, n_phi = envelope.shape
+        rear_sector_deg = 30.0
+        rear_idx_limit = int(n_theta * (rear_sector_deg / 180.0))
+        
+        rear_sector_data = envelope[0:rear_idx_limit, :]
+        dist_aircraft_safe = np.max(rear_sector_data)
+        
+        f.write(f">>> AIRCRAFT SAFE SEPARATION: {dist_aircraft_safe:.4f} m <<<\n")
+        f.write(f"  (Tail Aspect < {rear_sector_deg} deg - Pilot safe distance)\n\n")
+
         f.write("[Grid Statistics]\n")
         f.write(f"  Resolution: {config['compute']['spatial_bins']} x {config['compute']['spatial_bins']}\n")
         f.write(f"  Mean Safe Distance: {np.mean(envelope):.4f} m\n")
