@@ -37,3 +37,10 @@ data:
   output_dir: "data_cache"
   mk82_file: "mk82_fragments.npy"
   blu111_file: "blu111_fragments.npy"
+
+# 任务选择 (Task Selection)
+selection:
+  munition_type: "Mk82"    # [Mk82, BLU-111]
+  initiation: "Tail"       # [Nose, Tail] 
+  # Note: Actually Table C-32 is Mk82/Nose, Table C-33 is BLU-111/Tail.
+  # We will use this to select which pre-processed file to load.

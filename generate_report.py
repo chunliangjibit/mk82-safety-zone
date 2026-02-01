@@ -32,7 +32,11 @@ def generate_calculation_report(config_path, data_path, output_dir):
         
         f.write(f"Date/Time: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write(f"Config File: {config_path}\n")
-        f.write(f"Result Data: {data_path}\n\n")
+        f.write(f"Result Data: {data_path}\n")
+        
+        selection = config.get('selection', {})
+        f.write(f"Munition Type:  {selection.get('munition_type', 'Mk82')}\n")
+        f.write(f"Initiation:     {selection.get('initiation', 'Nose')}\n\n")
         
         f.write("--------------------------------------------------------\n")
         f.write("1. INPUT PARAMETERS\n")
@@ -59,14 +63,21 @@ def generate_calculation_report(config_path, data_path, output_dir):
         f.write("--------------------------------------------------------\n")
         f.write("2. DATA SOURCE\n")
         f.write("--------------------------------------------------------\n")
-        frag_file = os.path.join(config['data']['output_dir'], config['data']['mk82_file'])
+        
+        init_mode = config.get('selection', {}).get('initiation', 'Nose')
+        if init_mode.lower() == 'nose':
+            data_filename = config['data']['mk82_file']
+        else:
+            data_filename = config['data']['blu111_file']
+            
+        frag_file = os.path.join(config['data']['output_dir'], data_filename)
         if os.path.exists(frag_file):
             frags = np.load(frag_file)
-            f.write(f"Fragment Database: {config['data']['mk82_file']}\n")
+            f.write(f"Fragment Database: {data_filename}\n")
             f.write(f"  Total Fragment Groups: {len(frags)}\n")
             f.write(f"  Mean Fragment Count:   {np.sum(frags[:,1]):.1f}\n")
         else:
-            f.write("Fragment Data: Not Found\n")
+            f.write(f"Fragment Data ({data_filename}): Not Found\n")
         f.write("\n")
             
         f.write("--------------------------------------------------------\n")

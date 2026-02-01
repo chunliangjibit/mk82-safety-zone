@@ -27,11 +27,24 @@ def main():
     with open("config.yaml", 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
         
-    # Load Data
-    # We process Mk82 first (or make it selectable)
-    # Using Mk82 for now
-    frag_path = os.path.join(config['data']['output_dir'], config['data']['mk82_file'])
-    print(f"Loading Fragments from {frag_path}...")
+    # Load Fragments based on selection
+    selection = config.get('selection', {})
+    m_type = selection.get('munition_type', 'Mk82')
+    init_mode = selection.get('initiation', 'Nose')
+    
+    # Selection Mapping: 
+    # Nose -> C32 (Mk82)
+    # Tail -> C33 (BLU-111)
+    # Per user request: Mk82 Tail is actually Table C-33 BLU-111
+    if init_mode.lower() == 'nose':
+        data_file = config['data']['mk82_file']
+        actual_munition = f"{m_type} (Tritonal, Nose)"
+    else:
+        data_file = config['data']['blu111_file']
+        actual_munition = f"{m_type} (PBXN-109, Tail)"
+        
+    frag_path = os.path.join(config['data']['output_dir'], data_file)
+    print(f"Loading Fragments for {actual_munition} from {frag_path}...")
     fragments = np.load(frag_path)
     
     # Generate Tasks
