@@ -18,20 +18,20 @@
 - **Action**: Developed `batch_runner.py` using Python `multiprocessing`.
 - **Result**: Processed 77 flight工况 (V: 200-300m/s, Angle: 75-90) in < 3 seconds on 14 cores.
 
-### Phase 5: Safety Audit & Refinement
-- **Objective**: Align reported safety distances with pilot tactical manual requirements.
-- **Action**:
-    - Disaggregated **Global Max Hazard** (1171m) and **Aircraft Safe Separation** (Tail Aspect).
-    - Implemented a 15-degree "Tail Safe Corridor" detection logic.
-    - Result: Confirmed Tail-aspect safety at **620.33m**, matching tactical expectations.
+### Phase 5: Tail-Aspect Experimentation (Obsolete)
+- **Objective**: Explore reduced safety distances for tactical escape corridors.
+- **Action**: Implemented 15-degree "Tail Safe Corridor" logic.
+- **Result**: Proved a theoretical reduction to **620.33m** for specific sectors.
+- **Decision**: Later **removed** to ensure unambiguous, robust safety guidance.
 
-### Phase 6: System Simplification & Delivery
-- **Objective**: Streamline configuration and deliver a production-ready workspace.
+### Phase 6: Final Consolidation & Delivery
+- **Objective**: Deliver a robust, unified safety metric.
 - **Action**:
-    - Merged munition/initiation selections into a single **Nose/Tail** toggle in `config.yaml`.
-    - Automated dataset switching (Mk82/Nose vs BLU-111/Tail).
-    - Performed a deep project cleanup, removing obsolete tests and reports.
+    - Reverted to **Omnidirectional (Global Max)** as the sole safety metric.
+    - Result: Established **880.75m** as the consolidated safe distance for BLU-111 (Tail Initiation).
+    - Hardened reporting and visualization to remove potentially misleading corridor data.
+    - Final Workspace Cleanup and documentation finalized.
 
 ---
-**Current Status**: Version 3.0 Production Ready.
-**System Integrity**: All physics verified against Table C-32/C-33 data.
+**Current Status**: Version 4.0 Production Final.
+**System Integrity**: All calculations consolidated into a single, conservative omnidirectional boundary.

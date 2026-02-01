@@ -1,0 +1,6 @@
+numpy
+pyyaml
+numba
+matplotlib
+plotly
+tqdm
