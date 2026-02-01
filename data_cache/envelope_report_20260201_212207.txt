@@ -2,7 +2,7 @@
        MK82 SAFETY ENVELOPE CALCULATION REPORT          
 ========================================================
 
-Date/Time: 2026-02-01 21:07:03
+Date/Time: 2026-02-01 21:22:07
 Config File: config.yaml
 Result Data: data_cache\envelope_result.npy
 Initiation Mode: Tail
@@ -35,15 +35,10 @@ Fragment Database: blu111_fragments.npy
 --------------------------------------------------------
 3. CALCULATION RESULTS
 --------------------------------------------------------
-[A] GLOBAL MAXIMUM HAZARD (OMNIDIRECTIONAL)
+[A] CONSOLIDATED SAFE DISTANCE (OMNIDIRECTIONAL)
     DISTANCE: 880.75 meters
     CONTEXT:  This is the absolute safety boundary. Regardless of where the
               aircraft is relative to the burst, it is safe beyond this distance.
-
-[B] AIRCRAFT TAIL SAFE SEPARATION (15° CORRIDOR)
-    DISTANCE: 620.33 meters
-    CONTEXT:  This reduced distance is ONLY valid if the aircraft remains within
-              the 15-degree cone directly behind the bomb (Tail Aspect).
 
 [Grid Statistics]
   Resolution: 72 x 72

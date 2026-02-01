@@ -86,24 +86,10 @@ def generate_calculation_report(config_path, data_path, output_dir):
         
         # 1. Global Max Hazard (Omnidirectional)
         max_safe_dist = np.max(envelope)
-        f.write("[A] GLOBAL MAXIMUM HAZARD (OMNIDIRECTIONAL)\n")
+        f.write("[A] CONSOLIDATED SAFE DISTANCE (OMNIDIRECTIONAL)\n")
         f.write(f"    DISTANCE: {max_safe_dist:.2f} meters\n")
         f.write("    CONTEXT:  This is the absolute safety boundary. Regardless of where the\n")
         f.write("              aircraft is relative to the burst, it is safe beyond this distance.\n\n")
-        
-        # 2. Aircraft Tail Safe Separation
-        meta_file = os.path.join(output_dir, "envelope_meta.yaml")
-        if os.path.exists(meta_file):
-            with open(meta_file, 'r') as mf:
-                meta = yaml.safe_load(mf)
-                dist_aircraft_safe = meta.get('aircraft_safe_dist', 0.0)
-        else:
-            dist_aircraft_safe = 0.0 # Fallback
-
-        f.write("[B] AIRCRAFT TAIL SAFE SEPARATION (15° CORRIDOR)\n")
-        f.write(f"    DISTANCE: {dist_aircraft_safe:.2f} meters\n")
-        f.write("    CONTEXT:  This reduced distance is ONLY valid if the aircraft remains within\n")
-        f.write("              the 15-degree cone directly behind the bomb (Tail Aspect).\n\n")
 
         f.write("[Grid Statistics]\n")
         f.write(f"  Resolution: {config['compute']['spatial_bins']} x {config['compute']['spatial_bins']}\n")

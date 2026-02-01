@@ -198,34 +198,6 @@ def plot_engineering_views(envelope, output_path):
     mid_phi = n_phi // 2 # Phi ~ 0
     opp_phi = 0 # Phi ~ -pi
     
-    # Calculate indices for Tail Aspect highlight (0-15 deg)
-    rear_sector_deg = 15.0
-    rear_idx_limit = int(n_theta * (rear_sector_deg / 180.0))
-    
-    # ...
-    
-    # Highlight Tail Aspect Sector
-    # Theta 0 to rear_idx_limit
-    x_tail = X[0:rear_idx_limit, mid_phi]
-    z_tail = Z[0:rear_idx_limit, mid_phi]
-    ax_side.plot(x_tail, z_tail, 'g-', linewidth=3, label='Tail Aspect (Safe Corridor)')
-    
-    # Annotation for Global Max and Aircraft Safe Separation
-    r_global_max = np.max(envelope)
-    r_safe_tail = np.max(envelope[0:rear_idx_limit, :])
-    
-    # Label Global Max
-    ax_side.annotate(f'Global Max: {r_global_max:.1f}m', 
-                     xy=(r_global_max, 0), xytext=(r_global_max*1.1, r_global_max*0.2),
-                     arrowprops=dict(facecolor='red', shrink=0.05, width=1, headwidth=5),
-                     color='red', fontweight='bold')
-    
-    # Label Aircraft Tail Safe
-    ax_side.annotate(f'Tail Safe: {r_safe_tail:.1f}m', 
-                     xy=(0, r_safe_tail), xytext=(r_safe_tail/2, r_safe_tail*1.3),
-                     arrowprops=dict(facecolor='green', shrink=0.05, width=1, headwidth=5),
-                     color='green')
-    
     # Add Reference Plane
     ax_side.scatter([0], [0], color='k', marker='x', s=100, label='Release Point')
     
@@ -260,58 +232,6 @@ def plot_engineering_views(envelope, output_path):
     plt.savefig(output_path, dpi=150, facecolor='white')
     print(f"Saved Engineering Plot to {output_path}")
 
-def plot_tail_focus(envelope, output_path):
-    """
-    Specifically zooms on the tail sector and provides detailed technical annotation.
-    """
-    n_theta, n_phi = envelope.shape
-    theta = np.linspace(0, np.pi, n_theta)
-    
-    # Side view slice (Phi=0 and Pi)
-    mid_phi = n_phi // 2
-    r_tail = envelope[:, mid_phi]
-    
-    # Indices for 15 deg corridor
-    rear_idx = int(n_theta * (15.0 / 180.0))
-    
-    x = r_tail * np.sin(theta)
-    z = r_tail * np.cos(theta)
-    
-    plt.figure(figsize=(12, 8))
-    plt.style.use('default')
-    
-    # Plot Full Curve for context (faint)
-    plt.plot(x, z, color='gray', alpha=0.3, label='Full Envelope Context')
-    
-    # Highlight Tail Sector (Bold Green)
-    plt.plot(x[:rear_idx], z[:rear_idx], color='green', linewidth=4, label='15° Tail Safe Zone')
-    
-    # Annotate Safe Dist
-    r_safe = np.max(envelope[:rear_idx, :])
-    plt.scatter([0], [r_safe], color='green', s=100, zorder=5)
-    plt.annotate(f'Tail Safe: {r_safe:.2f} m', 
-                 xy=(0, r_safe), xytext=(200, r_safe + 100),
-                 arrowprops=dict(facecolor='green', shrink=0.05, width=2),
-                 fontsize=14, fontweight='bold', color='green')
-    
-    # Release Point
-    plt.scatter([0], [0], color='red', marker='*', s=200, label='Burst Point')
-    
-    plt.title("Tail Separation Focus (Escape Corridor Analysis)", fontsize=16, fontweight='bold')
-    plt.xlabel("Lateral Offset (m)")
-    plt.ylabel("Separation Altitude (m)")
-    plt.grid(True, linestyle=':', alpha=0.7)
-    plt.axis('equal')
-    
-    # Zoom logic: focus on the tailward half
-    plt.xlim(-500, 500)
-    plt.ylim(-100, r_safe * 1.2)
-    
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(output_path, dpi=150)
-    print(f"Saved Tail Focus Plot to {output_path}")
-
 def main():
     config_path = "config.yaml"
     with open(config_path, 'r', encoding='utf-8') as f:
@@ -331,10 +251,7 @@ def main():
     # 2. Global Overview (PNG)
     plot_engineering_views(envelope, os.path.join(output_dir, "envelope_global.png"))
     
-    # 3. Tail Focus Analysis (PNG)
-    plot_tail_focus(envelope, os.path.join(output_dir, "envelope_tail_focus.png"))
-    
-    # Legacy side view for backwards compatibility
+    # 3. 2D Slices (PNG)
     plot_2d_slices(envelope, output_dir)
     
     print(f"Max Safe Distance: {np.max(envelope):.2f} m")
