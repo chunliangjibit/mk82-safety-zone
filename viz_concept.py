@@ -36,11 +36,19 @@ def draw_concept_diagram(output_path="data_cache/concept_diagram.png"):
     ax.text(vx, vy, f'  Bomb Velocity\n  (260 m/s @ {abs(impact_angle_deg)}° Dive)', 
             color='red', fontsize=12, va='top')
     
-    # C. 画尾部安全扇区 (Tail Safe Corridor)
+    # C. 画弹体轴线 (Bomb Body Axis)
+    # 延长轴线方便展示角度
+    axis_len = 900
+    ax.plot([-axis_len * np.cos(impact_rad), axis_len * np.cos(impact_rad)], 
+            [-axis_len * np.sin(impact_rad), axis_len * np.sin(impact_rad)], 
+            color='darkred', linestyle='-.', alpha=0.4, label='Longitudinal Axis')
+
+    # D. 画尾部安全扇区 (Tail Safe Corridor)
     # 扇区范围: 尾部轴线 +/- 15度
     wedge_radius = 800
-    theta1 = np.degrees(tail_angle_rad) - 15
-    theta2 = np.degrees(tail_angle_rad) + 15
+    theta_center = np.degrees(tail_angle_rad)
+    theta1 = theta_center - 15
+    theta2 = theta_center + 15
     
     # 绘制扇区 (半透明绿)
     wedge = patches.Wedge((0, 0), wedge_radius, theta1, theta2, 
@@ -50,21 +58,29 @@ def draw_concept_diagram(output_path="data_cache/concept_diagram.png"):
     # 画尾部中心轴线 (Reference Line theta=0 in simulation)
     ax.plot([0, wedge_radius * np.cos(tail_angle_rad)], 
             [0, wedge_radius * np.sin(tail_angle_rad)], 
-            color='green', linestyle='--', linewidth=1.5)
-    ax.text(wedge_radius * np.cos(tail_angle_rad), wedge_radius * np.sin(tail_angle_rad), 
-            '  Tail Axis (Theta=0)', color='green', fontsize=12)
+            color='green', linestyle='--', linewidth=2)
+    
+    # 标注 15度 夹角
+    # 画一段圆弧表示角度
+    arc_rad = 300
+    arc = patches.Arc((0,0), arc_rad, arc_rad, theta2=theta_center, theta1=theta1, 
+                      color='green', linewidth=1.5)
+    ax.add_patch(arc)
+    ax.text(arc_rad * np.cos(np.radians(theta_center-10)), 
+            arc_rad * np.sin(np.radians(theta_center-10)), 
+            '15°', color='green', fontweight='bold')
 
-    # D. 画载机位置 (Aircraft)
-    # 假设飞机刚好在安全距离边缘，且位于正尾部
+    ax.text(wedge_radius * np.cos(tail_angle_rad), wedge_radius * np.sin(tail_angle_rad), 
+            '  Tail Axis (θ=0°)', color='green', fontsize=12, fontweight='bold')
+
+    # E. 画载机位置 (Aircraft)
     ac_x = safe_dist * np.cos(tail_angle_rad)
     ac_y = safe_dist * np.sin(tail_angle_rad)
     
-    # 画飞机图标 (用简单的三角形代替)
-    # 飞机朝向: 水平向右飞 (假设平飞投弹)
     plane_marker = dict(marker='>', markersize=15, color='blue', zorder=10, label='Aircraft')
     ax.plot(ac_x, ac_y, **plane_marker)
     
-    # E. 画斜距连线 (Slant Range Line) - 核心重点！
+    # F. 画斜距连线 (Slant Range Line)
     ax.plot([0, ac_x], [0, ac_y], color='blue', linestyle='-', linewidth=2)
     
     # 标注斜距数值
@@ -74,22 +90,22 @@ def draw_concept_diagram(output_path="data_cache/concept_diagram.png"):
                 xy=(mid_x, mid_y), xytext=(mid_x+100, mid_y),
                 arrowprops=dict(arrowstyle="->", connectionstyle="arc3"),
                 fontsize=12, fontweight='bold', color='blue',
-                bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="blue", alpha=0.8))
+                bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="blue", alpha=0.9))
 
     # --- 3. 图表修饰 ---
     ax.set_aspect('equal')
-    ax.set_title(f'Mk82 Snakeye Safe Separation Geometry\n(Tail Initiation / High Drag)', fontsize=14, fontweight='bold')
-    ax.set_xlabel('Distance Downrange (m)')
+    ax.set_title(f'Geometric Definition: 15° Tail Safety Cone\n(Relative to Bomb Longitudinal Axis)', fontsize=14, fontweight='bold')
+    ax.set_xlabel('Distance (m)')
     ax.set_ylabel('Altitude (m)')
     ax.grid(True, linestyle=':', alpha=0.6)
     ax.legend(loc='lower right')
     
     # 设置显示范围
-    ax.set_xlim(-200, 800)
+    ax.set_xlim(-400, 800)
     ax.set_ylim(-300, 800)
     
     # 原点爆炸点
-    ax.scatter([0], [0], color='orange', s=200, marker='*', zorder=6, label='Burst Point')
+    ax.scatter([0], [0], color='orange', s=250, marker='*', zorder=6, label='Burst Point')
 
     plt.tight_layout()
     plt.savefig(output_path, dpi=150)
