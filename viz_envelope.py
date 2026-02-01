@@ -198,13 +198,11 @@ def plot_engineering_views(envelope, output_path):
     mid_phi = n_phi // 2 # Phi ~ 0
     opp_phi = 0 # Phi ~ -pi
     
-    # Calculate indices for Tail Aspect highlight (0-30 deg)
-    rear_sector_deg = 30.0
+    # Calculate indices for Tail Aspect highlight (0-15 deg)
+    rear_sector_deg = 15.0
     rear_idx_limit = int(n_theta * (rear_sector_deg / 180.0))
     
-    # Use Dark colors: Blue and Red
-    ax_side.plot(X[:, mid_phi], Z[:, mid_phi], 'b-', linewidth=1.5, label='Heading 0')
-    ax_side.plot(X[:, opp_phi], Z[:, opp_phi], 'r-', linewidth=1.5, label='Heading 180')
+    # ...
     
     # Highlight Tail Aspect Sector
     # Theta 0 to rear_idx_limit
@@ -213,6 +211,7 @@ def plot_engineering_views(envelope, output_path):
     ax_side.plot(x_tail, z_tail, 'g-', linewidth=3, label='Tail Aspect (Safe Corridor)')
     
     # Annotation for Aircraft Safe Separation
+    # Read from meta or re-calc strictly
     r_safe_tail = np.max(envelope[0:rear_idx_limit, :])
     ax_side.annotate(f'Aircraft Safe: {r_safe_tail:.1f}m', 
                      xy=(0, r_safe_tail), xytext=(r_safe_tail/2, r_safe_tail*1.2),

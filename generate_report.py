@@ -88,13 +88,13 @@ def generate_calculation_report(config_path, data_path, output_dir):
         else:
             # Fallback to percentile if meta not found
             n_theta, n_phi = envelope.shape
-            rear_sector_deg = 30.0
+            rear_sector_deg = 15.0
             rear_idx_limit = int(n_theta * (rear_sector_deg / 180.0))
             rear_sector_data = envelope[0:rear_idx_limit, :]
             dist_aircraft_safe = np.percentile(rear_sector_data, 95)
         
         f.write(f">>> AIRCRAFT SAFE SEPARATION: {dist_aircraft_safe:.4f} m <<<\n")
-        f.write(f"  (Tail Aspect < 30.0 deg - Verified pilot safe distance)\n\n")
+        f.write(f"  (Tail Aspect < 15.0 deg - Verified pilot safe distance)\n\n")
 
         f.write("[Grid Statistics]\n")
         f.write(f"  Resolution: {config['compute']['spatial_bins']} x {config['compute']['spatial_bins']}\n")

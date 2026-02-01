@@ -88,9 +88,9 @@ def main():
     for i, res in enumerate(results):
         v, ang = tasks[i]
         global_max_envelope = np.maximum(global_max_envelope, res)
-        # Calculate local peak for this specific condition (Theta 0..30)
+        # Calculate local peak for this specific condition (Theta 0..15)
         n_t = res.shape[0]
-        r_idx = int(n_t * (30.0 / 180.0))
+        r_idx = int(n_t * (15.0 / 180.0))
         local_tail_peak = np.max(res[0:r_idx, :])
         
         if local_tail_peak > 1000:

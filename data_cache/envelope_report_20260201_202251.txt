@@ -1,0 +1,50 @@
+========================================================
+       MK82 SAFETY ENVELOPE CALCULATION REPORT          
+========================================================
+
+Date/Time: 2026-02-01 20:22:51
+Config File: config.yaml
+Result Data: data_cache\envelope_result.npy
+
+--------------------------------------------------------
+1. INPUT PARAMETERS
+--------------------------------------------------------
+[Bomb Physics]
+  Mass:         227.0 kg
+  Shape Factor: 1.5
+  Drag Coeff:   1.1
+  Air Density:  1.225 kg/m^3
+
+[Safety Criteria]
+  Vulnerable Area:  25.0 m^2
+  Safety Prob:      0.0001
+  Lethal Energy:    100 J
+
+[Scan Envelope]
+  Velocity: 200.0 - 300.0 m/s (Step: 10.0)
+  Angle:    75.0 - 90.0 deg (Step: 2.5)
+
+--------------------------------------------------------
+2. DATA SOURCE
+--------------------------------------------------------
+Fragment Database: mk82_fragments.npy
+  Total Fragment Groups: 196
+  Mean Fragment Count:   8087.2
+
+--------------------------------------------------------
+3. CALCULATION RESULTS
+--------------------------------------------------------
+GLOBAL MAX HAZARD DISTANCE: 1171.8504 meters
+  (Worst case: Side/Front aspect - Ground hazard)
+
+>>> AIRCRAFT SAFE SEPARATION: 1171.8504 m <<<
+  (Tail Aspect < 15.0 deg - Verified pilot safe distance)
+
+[Grid Statistics]
+  Resolution: 72 x 72
+  Mean Safe Distance: 118.4068 m
+  Min Safe Distance:  0.0000 m
+
+--------------------------------------------------------
+END OF REPORT
+========================================================
