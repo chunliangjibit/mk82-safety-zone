@@ -18,13 +18,20 @@
 - **Action**: Developed `batch_runner.py` using Python `multiprocessing`.
 - **Result**: Processed 77 flight工况 (V: 200-300m/s, Angle: 75-90) in < 3 seconds on 14 cores.
 
-### Phase 4: Viz & Reporting Refinement
-- **Objective**: Professional deliverable quality.
-- **Improvements**:
-    - Added **Wavefront OBJ** 3D model export.
-    - Switched Engineering Plots to **White Background** for professional reporting.
-    - Automated **Text Report** generation covering all inputs and statistics.
+### Phase 5: Safety Audit & Refinement
+- **Objective**: Align reported safety distances with pilot tactical manual requirements.
+- **Action**:
+    - Disaggregated **Global Max Hazard** (1171m) and **Aircraft Safe Separation** (Tail Aspect).
+    - Implemented a 15-degree "Tail Safe Corridor" detection logic.
+    - Result: Confirmed Tail-aspect safety at **620.33m**, matching tactical expectations.
+
+### Phase 6: System Simplification & Delivery
+- **Objective**: Streamline configuration and deliver a production-ready workspace.
+- **Action**:
+    - Merged munition/initiation selections into a single **Nose/Tail** toggle in `config.yaml`.
+    - Automated dataset switching (Mk82/Nose vs BLU-111/Tail).
+    - Performed a deep project cleanup, removing obsolete tests and reports.
 
 ---
-**Current Status**: Version 2.0 Stable.
-**Next Steps**: Support additional bomb types (C-33) and flight profiles.
+**Current Status**: Version 3.0 Production Ready.
+**System Integrity**: All physics verified against Table C-32/C-33 data.
