@@ -10,12 +10,12 @@
   * 安装命令: `pip install numpy pyyaml numba tqdm`
 
 ### 运行流程
-1. **修改配置**: 打开 `config.yaml`，根据需要调整落速 (`velocity`)、落角 (`angle`) 范围。
+1. **修改配置**: 打开 `config.yaml`，根据需要调整落速 (`velocity`)、落角 (`angle`) 范围，以及战术高度层 (`tactical_band`)。
 2. **执行计算**: 运行 `python batch_runner.py`。
    * 系统将自动扫描配置的所有工况，并利用多核 CPU 进行并行计算。
 3. **查看结论**:
-   * 计算完成后，系统会自动在 `data_cache` 目录生成名为 `envelope_report_YYYYMMDD_HHMMSS.txt` 的**中文技术报告**。
-   * 结果数据保存在 `envelope_result.npy`。
+   * **文本报告**: 在 `data_cache` 目录查看最新的 `envelope_report_*.txt`。报告包含全空域极值分析及特定高度层的战术推荐值。
+   * **可视化**: 查看 `envelope_global.png` (全向综合视图) 和 `envelope_side_view.png` (带战术高度层阴影的高亮剖面图)。
 4. **(可选) 可视化**: 运行 `python viz_envelope.py` 生成 3D 交互图表和工程四视图。
 
 ---

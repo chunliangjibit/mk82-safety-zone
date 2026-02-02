@@ -39,8 +39,11 @@
     - Logic dynamically calculates area based on global look-angle.
     - Added **Tactical Analysis Report**: Separates "Absolute Peak" from "Tactical Band" (50-150m) data.
 - **Result**: Proved that while Global Max remains ~880m, low-altitude penetration (50-150m) still requires ~870m clearance due to fragmentation main lobes.
-- **Final Polish**: Renamed parameters to **落速/落角** to match operational terminology. Full Chinese localization.
+- **Final Polish**: 
+    - Renamed parameters to **落速/落角** to match operational terminology. 
+    - Enhanced `viz_envelope.py` with **Tactical Band highlighting** (shaded 50-150m region) for direct visual evidence.
+    - Full Chinese localization of the tactical report.
 
 ---
-**Current Status**: Version 5.0 Tactical Production.
-**System Integrity**: Physics-verified dynamic area weighting and tactical height-filtering active.
+**Current Status**: Version 5.1 Tactical Final.
+**System Integrity**: All physics, terminology, and tactical visualizations synchronized.

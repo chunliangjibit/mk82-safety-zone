@@ -1,4 +1,4 @@
-# Gemini Project Overview: Mk82 Safe Zone v4.0
+# Gemini Project Overview: Safe Zone v5.1 (Tactical)
 
 ## System Personality
 This system is a **High-Performance Tactical Safety Suite**. It uses physics-based dynamic projection (Box Model) to move beyond conservative static assumptions, providing both "Absolute Redlines" and "Tactical Recommendations".

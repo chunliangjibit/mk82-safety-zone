@@ -38,7 +38,7 @@ def plot_3d_envelope(envelope, output_path):
     fig = go.Figure(data=[go.Surface(x=X, y=Y, z=Z, colorscale='Viridis', opacity=0.9)])
     
     fig.update_layout(
-        title='Mk82 Safe Escape Envelope (3D)',
+        title='安全包络线 3D 视图 (Safe Escape Envelope 3D)',
         scene=dict(
             xaxis_title='X (meters) - East',
             yaxis_title='Y (meters) - North',
@@ -82,12 +82,15 @@ def plot_2d_slices(envelope, output_dir):
     # Draw Bomb (Origin)
     plt.scatter([0], [0], c='red', marker='x', label='Release Point')
     
-    plt.title("Vertical Cross Section (Side View)")
+    # --- [Tactical Band Highlight] ---
+    plt.axhspan(50, 150, color='green', alpha=0.1, label='Tactical Band (50-150m)')
+    
+    plt.title("Vertical Cross-Section (Side View)")
     plt.xlabel("Range (m)")
-    plt.ylabel("Altitude Relative to Release (m)")
-    plt.grid(True)
+    plt.ylabel("Altitude (m)")
+    plt.grid(True, linestyle=':', alpha=0.6)
     plt.axis('equal')
-    plt.legend()
+    plt.legend(loc='upper right')
     
     path = os.path.join(output_dir, "envelope_side_view.png")
     plt.savefig(path)
