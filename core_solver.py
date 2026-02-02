@@ -130,7 +130,116 @@ def generate_rays_jit(
                 out_rays[count_idx, 3] = weight
                 count_idx += 1
                 
+
+                
     return out_rays[:count_idx]
+
+@njit(fastmath=True)
+def spherical_to_cartesian(theta, phi):
+    """
+    Local Sphere to Local Cartesian (Standard Physics Convention)
+    Theta: 0 to pi (From +Z)
+    Phi: -pi to pi (From +X on XY plane)
+    """
+    sin_t = math.sin(theta)
+    x = sin_t * math.cos(phi)
+    y = sin_t * math.sin(phi)
+    z = math.cos(theta)
+    return x, y, z
+
+@njit(fastmath=True)
+def get_projected_area(theta_bin, phi_bin, dive_angle_rad, top, side, front):
+    """
+    Calculates the projected area of the aircraft based on the ray's incoming global vector.
+    
+    Coordinate Logic:
+    1. The 'Bin' logic in generate_rays_jit produces (theta, phi) relative to the bomb's velocity vector 
+       (or strictly speaking, a frame aligned with bomb's velocity W).
+       - Theta=0 is TAILWARD (if we used -vl_z). 
+       - Wait, generate_rays_jit does: theta, phi = spherical_bin(-vl_x, -vl_y, -vl_z).
+       - vl_z was ALONG bomb velocity. So -vl_z is TAILWARD (-W).
+       - So Theta=0 is TAIL direction.
+    
+    2. We need to reconstruct the "Global Vector" v_global of this ray.
+       - Let's reconstruct vector v_tail_frame in the "Tail-Aligned Frame".
+       - This frame has Z_tail = -W (Tailward), Y_tail = U (Horizontal), X_tail is derived.
+       - Actually, generate_rays_jit uses (X', Y', Z') = (U x W, U, W).
+       - And inputs (-vl_x, -vl_y, -vl_z).
+       - So the ray vector V = (-vl_x)*X' + (-vl_y)*Y' + (-vl_z)*Z'.
+       - V = v_tail_frame.x * X' + v_tail_frame.y * Y' + v_tail_frame.z * Z'
+       - Wait, the bin (theta, phi) comes from spherical_bin(vx, vy, vz).
+       - So vx = sin(t)cos(p), vy = sin(t)sin(p), vz = cos(t).
+       - These (vx, vy, vz) ARE (-vl_x, -vl_y, -vl_z).
+       - So V_global = vx * X' + vy * Y' + vz * Z'.
+    
+    3. Global Basis (X', Y', Z') in Earth Coordinates (East, North, Up):
+       - Bomb Velocity W (Magnitude 1) is diving at 'dive_angle'.
+       - Assuming standard dive: Heading 'North' (Y+) or just 'Forward'? 
+       - Let's assume Bomb Heading is along X axis? No, strictly 2D X-Z in generate_rays_jit.
+       - In generate_rays_jit: vb_x = cos(rad), vb_z = -sin(rad). (Down is -Z).
+       - So W = (cos(ang), 0, -sin(ang)).
+       - Y' = U = (0, 1, 0).
+       - X' = U x W = (1*(-sin) - 0, 0, 0 - 1*cos) = (-sin(ang), 0, -cos(ang)) ???
+       - Let's recheck Cross Product U(0,1,0) x W(c, 0, -s):
+         x: 1*(-s) - 0 = -s
+         y: 0 - 0 = 0
+         z: 0 - 1*(c) = -c
+       - So X' = (-sin(ang), 0, -cos(ang)).
+       - NOTE: X' is "Down-Left"? Or just orthogonal.
+       
+    4. We need Z-component of V_global (Vertical Factor).
+       - V_global_z = vx * X'_z + vy * Y'_z + vz * Z'_z
+       - X'_z = -cos(dive_angle)
+       - Y'_z = 0
+       - Z'_z = -sin(dive_angle)
+       
+    5. Calculate Vertical Factor:
+       - vert_factor = abs(vx * (-cos(ang)) + vz * (-sin(ang)))
+    """
+    
+    # 1. Reconstruct local components from Bin (Theta, Phi)
+    vx, vy, vz = spherical_to_cartesian(theta_bin, phi_bin)
+    
+    # 2. Get Vertical Component magnitude
+    # Using derived dot product logic
+    cos_dive = math.cos(dive_angle_rad)
+    sin_dive = math.sin(dive_angle_rad)
+    
+    # Vz_global = vx * (-cos_dive) + vz * (-sin_dive)
+    global_z = vx * (-cos_dive) + vz * (-sin_dive)
+    
+    vertical_factor = abs(global_z)
+    
+    # 3. Horizontal Factor
+    # Ideally sqrt(1 - v^2), but safeguard against float error > 1
+    if vertical_factor >= 1.0:
+        horizontal_factor = 0.0
+    else:
+        horizontal_factor = math.sqrt(1.0 - vertical_factor * vertical_factor)
+        
+    # 4. Weighted Area
+    # Top/Bottom sees vertical rays. Side/Front sees horizontal.
+    # User Spec: "Vertical Factor contributes to Top. Horizontal contributes to Side."
+    # Front is ignored/merged into side for now as per spec 
+    # (But we passed it in just in case logic expands)
+    
+    # Refined Logic:
+    # "Side" usually means lateral. "Front" means nose/tail.
+    # Our horizontal_factor mixes Side and Front.
+    # For a Box model, Horizontal Area = A_front * |V_long| + A_side * |V_lat|?
+    # But User Spec says simplistically: Side (~12) vs Front (~4). Usually use Side for horizontal.
+    # Let's stick to the Spec: "Horizontal component weight -> Side".
+    
+    area = top * vertical_factor + side * horizontal_factor
+    
+    # Safety Clamp
+    min_area = min(top, min(side, front))
+    if area < min_area:
+        area = min_area
+        
+    return area
+
+
 
 def solve_single_case(v_bomb, angle_bomb, fragments_data, config, density_const=DEFAULT_RHO_FRAG):
     # Unpack Config
@@ -138,7 +247,7 @@ def solve_single_case(v_bomb, angle_bomb, fragments_data, config, density_const=
     c_tgt = config['target']
     c_cmp = config['compute']
     
-    n_azimuth = 36 # Hardcoded or config?
+    n_azimuth = 144 # Increased for better coverage with 72 bins
     
     rays = generate_rays_jit(
         fragments_data,
@@ -209,14 +318,32 @@ def solve_single_case(v_bomb, angle_bomb, fragments_data, config, density_const=
     bin_centers_theta = (bin_t_idxs + 0.5) * d_theta
     bin_omegas = d_theta * d_phi * np.sin(bin_centers_theta)
     
-    target_area = c_tgt['area']
+    # Extract safe_prob
     safe_prob = c_tgt['safe_prob']
     
-    # Helper for "Safe R" logic
-    # C_val = SafeProb * dOmega / TargetArea
-    # R_crit = Sqrt(CumW / C_val)
-    # Max(Min(D_stop, R_crit))
+    # Unpack Box Model Config
+    use_box = False
+    a_top = 25.0
+    a_side = 12.0
+    a_front = 4.0
     
+    if 'area_box_model' in c_tgt and c_tgt['area_box_model'].get('enabled', False):
+        use_box = True
+        box_cfg = c_tgt['area_box_model']
+        a_top = float(box_cfg['top'])
+        a_side = float(box_cfg['side'])
+        a_front = float(box_cfg['front'])
+    
+    # Fallback to legacy if not enabled (though enabled in recent config)
+    # But actually c_tgt['area'] might be gone.
+    # If calculate_projected_area is used, we calculate area per bin.
+    
+    # Helper for "Safe R" logic
+    # C_val = SafeProb * dOmega / TargetArea -> NOW DYNAMIC
+    
+    # Need Dive Angle in Radians for projection
+    dive_rad = math.radians(float(angle_bomb))
+
     for i, b_idx in enumerate(unique_bins):
         start = start_indices[i]
         end = start_indices[i+1] if i+1 < len(start_indices) else len(sorted_bins)
@@ -225,7 +352,20 @@ def solve_single_case(v_bomb, angle_bomb, fragments_data, config, density_const=
         d_vals = sorted_d[start:end] # Descending
         w_vals = sorted_w[start:end]
         
-        c_val = (safe_prob * bin_omegas[i]) / target_area
+        # --- NEW DYNAMIC AREA CALCULATION ---
+        if use_box:
+            # Reconstruct Bin Center (Theta, Phi)
+            t_idx = b_idx // n_phi
+            p_idx = b_idx % n_phi
+            
+            cen_theta = (t_idx + 0.5) * d_theta
+            cen_phi = (p_idx + 0.5) * d_phi - np.pi 
+            
+            current_area = get_projected_area(cen_theta, cen_phi, dive_rad, a_top, a_side, a_front)
+        else:
+            current_area = a_top
+            
+        c_val = (safe_prob * bin_omegas[i]) / current_area
         if c_val <= 0: c_val = 1e-9
         
         cum_w = 0.0

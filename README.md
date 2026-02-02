@@ -1,33 +1,53 @@
-# Mk82/BLU-111 Safety Envelope Calculation System
+# MK82 安全包络线计算系统 (Safety Envelope Engine)
 
-A high-performance Python suite for calculating 1e-4 probability fragmentation safety envelopes based on US Manual Tables C-32 and C-33.
+本系统用于模拟 MK82 炸弹在不同投弹工况下的破片飞散安全性，计算载机在投弹后的最小安全距离。系统集成了最新的“三轴动态投影模型 (Box Model)”，可准确分析垂直与侧向机动场景下的安全包络线。
 
-## Features
-- **HPC Physics**: Numba JIT accelerated aerodynamics and probability flux solver.
-- **Parallel Processing**: Multiprocessing grid search for rapid envelope generation across multiple flight profiles.
-- **Professional Viz**: Standardized engineering 4-view plots, interactive 3D HTML models, and OBJ mesh export.
-- **Dual Mode Support**: Seamlessly switch between Nose Initiation (Mk 82) and Tail Initiation (BLU-111/B).
+## 1. 快速上手 (Quick Start)
 
-## Quick Start
-1. **Install Dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. **Configure**:
-   Edit `config.yaml` to set initiation mode (`Nose` or `Tail`).
-3. **Execute**:
-   ```bash
-   python batch_runner.py
-   python viz_envelope.py
-   ```
+### 环境要求
+* Python 3.8+
+* 依赖库: `numpy`, `pyyaml`, `numba`, `tqdm`
+  * 安装命令: `pip install numpy pyyaml numba tqdm`
 
-## Output
-Results are stored in `data_cache/`:
-- `envelope_report_*.txt`: Detailed tactical summary.
-- `envelope_global.png`: Engineering 4-view plot.
-- `envelope_3d.html`: Interactive 3D visualization.
+### 运行流程
+1. **修改配置**: 打开 `config.yaml`，根据需要调整投弹速度 (`velocity`)、俯冲角 (`angle`) 范围。
+2. **执行计算**: 运行 `python batch_runner.py`。
+   * 系统将自动扫描配置的所有工况，并利用多核 CPU 进行并行计算。
+3. **查看结论**:
+   * 计算完成后，系统会自动在 `data_cache` 目录生成名为 `envelope_report_YYYYMMDD_HHMMSS.txt` 的**中文技术报告**。
+   * 结果数据保存在 `envelope_result.npy`。
+4. **(可选) 可视化**: 运行 `python viz_envelope.py` 生成 3D 交互图表和工程四视图。
 
-## Final Results (v4.0 Production)
-For **BLU-111 (Tail Initiation)** at sea level:
-- **Consolidated Safe Distance**: **880.75 m**
-- (Worst-case safety boundary across all aspects)
+---
+
+## 2. 核心机理：三轴动态模型 (Box Model)
+
+系统不再使用单一的固定面积，而是根据每个破片射线的物理仰角，实时计算载机的投影暴露面积：
+* **机腹/机背方向**: 对应受弹面积 ~25.0 $m^2$。
+* **侧面方向**: 对应受弹面积 ~12.0 $m^2$。
+
+这意味着：在执行侧向规避或水平 Snakeye 投放时，系统计算出的安全距离将比传统模型更短（更符合战术实际），显著扩大了战术窗口。
+
+---
+
+## 3. 文件结构说明
+
+* `batch_runner.py`: **主程序入口**，负责批量计算和数据汇总。
+* `config.yaml`: **配置文件**，所有的物理参数、扫描范围、计算判据均在此处修改。
+* `core_solver.py`: **计算内核**，包含 JIT 高速编译的物理算法和坐标变换逻辑。
+* `generate_report.py`: **报告生成器**，负责分析计算结果并导出中文技术报告。
+* `viz_envelope.py`: **绘图工具**，生成 3D HTML 视图和 PNG 图片。
+* `data_cache/`: 存放原始破片数据库及计算输出的所有结果文件。
+
+---
+
+## 4. 常见问题记录
+
+* **报告中的全向最大值与侧向值的区别**:
+  * **最大值**: 代表全空域最危险的角度（通常发生在斜前方），是绝对安全的底线。
+  * **侧向值**: 代表水平运动方向的安全线，适用于飞行员执行侧向规避战术时参考。
+* **计算速度**: 基于 Numba 预编译，初次运行会有数秒的编译延迟，后续运行将进入毫秒级高速计算。
+
+---
+**维护者**: 工程计算团队
+**日期**: 2026-02-02

@@ -8,28 +8,33 @@ bomb:
   air_density: 1.225    # kg/m^3 (Sea level standard)
 
 # 目标与判据 (Target & Criteria)
+# 目标与判据 (Target & Criteria)
 target:
-  area: 25.0            # m^2 (载机暴露面积 / Vulnerable Area)
+  # area: 25.0            # Old fixed area (deprecated)
+  area_box_model:
+    enabled: true
+    top: 25.0    # m^2 机腹/机背投影 (应对来自下方/上方的破片)
+    side: 12.0   # m^2 侧面投影 (应对来自水平方向的破片)
+    front: 4.0   # m^2 迎头投影
   safe_prob: 0.0001     # 1e-4 (安全概率阈值 / Probability Threshold)
   energy_threshold: 100 # J (致死动能门限 / Lethal Energy Threshold)
 
-# 扫描范围 (Search Space) - 落速落角范围
+# 扫描包络参数 (Scan Envelope)
 scan:
   velocity:
-    min: 200.0          # m/s
-    max: 300.0          # m/s
-    step: 10.0          # 步长
+    min: 260.0    # m/s
+    max: 260.0    # m/s (Fixed at 260)
+    step: 10.0
   angle:
-    min: 75.0           # 度 (相对于水平面)
-    max: 90.0           # 度 (垂直)
-    step: 2.5           # 步长
+    min: 70.0     # deg
+    max: 90.0     # deg (70-90 Dive)
+    step: 5.0
 
-# 计算控制 (Compute Control)
+# 计算参数 (Computation)
 compute:
-  r_guess_min: 200      # 最小猜测距离 (m)
-  r_guess_max: 3000     # 最大猜测距离 (m)
-  spatial_bins: 72      # 空间角度切分 (360/72 = 5度一档)
-  parallel_workers: -2  # 负数表示 os.cpu_count() - N
+  spatial_bins: 72   # Resolution of the hazard sphere (72x72)
+  min_guess_dist: 100.0 # m (Starting guess for optimization)
+  parallel_workers: -2 # (Use all cores - 2)
 
 # 数据源配置
 data:
