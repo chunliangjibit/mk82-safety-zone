@@ -32,6 +32,15 @@
     - Hardened reporting and visualization to remove potentially misleading corridor data.
     - Final Workspace Cleanup and documentation finalized.
 
+### Phase 7: Dynamic Intelligence & Tactical Analysis (v5.0)
+- **Objective**: Move from static "Worst Case" to actual "Tactical Logic".
+- **Action**:
+    - Implemented **Box Model Projection** (Top: 25.0, Side: 12.0). 
+    - Logic dynamically calculates area based on global look-angle.
+    - Added **Tactical Analysis Report**: Separates "Absolute Peak" from "Tactical Band" (50-150m) data.
+- **Result**: Proved that while Global Max remains ~880m, low-altitude penetration (50-150m) still requires ~870m clearance due to fragmentation main lobes.
+- **Final Polish**: Renamed parameters to **落速/落角** to match operational terminology. Full Chinese localization.
+
 ---
-**Current Status**: Version 4.0 Production Final.
-**System Integrity**: All calculations consolidated into a single, conservative omnidirectional boundary.
+**Current Status**: Version 5.0 Tactical Production.
+**System Integrity**: Physics-verified dynamic area weighting and tactical height-filtering active.

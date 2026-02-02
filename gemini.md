@@ -1,7 +1,7 @@
 # Gemini Project Overview: Mk82 Safe Zone v4.0
 
 ## System Personality
-This system is a **High-Performance Production-Ready Safety Suite**. After multiple design iterations, it has been consolidated into a single-metric, absolute-safety framework to ensure clarity in high-stakes mission planning.
+This system is a **High-Performance Tactical Safety Suite**. It uses physics-based dynamic projection (Box Model) to move beyond conservative static assumptions, providing both "Absolute Redlines" and "Tactical Recommendations".
 
 ## Architecture Meta-Data
 - **Environment**: Conda `swarm` (Windows).
@@ -13,6 +13,7 @@ This system is a **High-Performance Production-Ready Safety Suite**. After multi
 2.  **v2.0**: HPC Engine (Numba) implementation.
 3.  **v3.0**: Tail-aspect corridor research (Audit fix).
 4.  **v4.0**: Consolidation to absolute omnidirectional safety (Final Delivery).
+5.  **v5.0**: Tactical Core Update. Multi-aspect projection (Box Model) & Height-filtered analysis.
 
 ## Key Logic Blocks
 1.  **`core_solver.py`**: JIT Physics Engine.

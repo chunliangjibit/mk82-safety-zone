@@ -16,6 +16,11 @@ target:
     top: 25.0    # m^2 机腹/机背投影 (应对来自下方/上方的破片)
     side: 12.0   # m^2 侧面投影 (应对来自水平方向的破片)
     front: 4.0   # m^2 迎头投影
+  # [新增] 战术高度层配置 (单位: 米)
+  # 用于生成最具实战指导意义的 "Tactical Band" 安全距离
+  tactical_band:
+    min_height: 50.0   # 最低突防高度
+    max_height: 150.0  # 最高突防高度
   safe_prob: 0.0001     # 1e-4 (安全概率阈值 / Probability Threshold)
   energy_threshold: 100 # J (致死动能门限 / Lethal Energy Threshold)
 

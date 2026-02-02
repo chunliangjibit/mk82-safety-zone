@@ -1,70 +1,158 @@
-
+import numpy as np
 import yaml
 import os
+import math
 import datetime
-import numpy as np
+
+def calculate_dynamic_area(sin_alpha, top, side):
+    """
+    重现 core_solver 中的面积计算逻辑，用于报告展示。
+    sin_alpha: 视线仰角的正弦值 (Vertical Factor)
+    """
+    vertical_factor = abs(sin_alpha)
+    # 水平因子 (Horizontal Factor)
+    if vertical_factor >= 1.0:
+        horizontal_factor = 0.0
+    else:
+        horizontal_factor = math.sqrt(1.0 - vertical_factor**2)
+    
+    area = top * vertical_factor + side * horizontal_factor
+    return area
+
+def scan_envelope_metrics(envelope, dive_angle_deg, a_top, a_side):
+    """
+    全数据网格扫描分析器。
+    将每个网格点还原为 (SlantRange, Height, Area)，并进行统计分析。
+    """
+    n_theta, n_phi = envelope.shape
+    dive_rad = math.radians(dive_angle_deg)
+    
+    # 结果容器
+    # 格式: [SlantRange, Height, Area]
+    all_points = []
+    
+    d_theta = np.pi / n_theta
+    d_phi = 2 * np.pi / n_phi
+    
+    for i in range(n_theta):
+        # 还原局部 Theta
+        theta_local = (i + 0.5) * d_theta
+        
+        # 预计算局部 Z 分量 (Local Vz = cos(theta))
+        local_vz = math.cos(theta_local)
+        local_rho = math.sin(theta_local) # sin(theta)
+        
+        for j in range(n_phi):
+            # 还原局部 Phi
+            phi_local = (j + 0.5) * d_phi - np.pi
+            
+            # 读取斜距 R
+            r = envelope[i, j]
+            if r <= 1.0: continue # 忽略无效点
+            
+            # --- 坐标变换: 局部 -> 全局 Z (高度) ---
+            # Local Cartesian (Normalized)
+            lx = local_rho * math.cos(phi_local)
+            # ly = local_rho * math.sin(phi_local) # Y不影响高度
+            lz = local_vz
+            
+            # Global Z (Height) calculation
+            # 旋转矩阵 (针对俯冲角 Dive):
+            # Height = -(lx * cos(Dive) + lz * sin(Dive)) * R
+            # 注意: 炸弹向下俯冲，所以 Global Z 向上为负方向的投影取反?
+            # 让我们回顾 core_solver: vb_x = cos(rad), vb_z = -sin(rad). (Down is -Z)
+            # Global Basis Z' = (wx, 0, wz) = (cos, 0, -sin)?
+            # Wait, core_solver lines 105-107:
+            # v_frag_gz = vl_x * (-wx) + vl_y * 0.0 + vl_z * wz
+            # We need to act consistently with core_solver logic.
+            # But here we are just doing geometric projection.
+            # Let's trust the user's provided formula for now: 
+            # h_factor = -(lx * math.cos(dive_rad) + lz * math.sin(dive_rad))
+            
+            h_factor = -(lx * math.cos(dive_rad) + lz * math.sin(dive_rad))
+            height = r * h_factor
+            
+            # 只关心上半球 (Height > 0) 的点，忽略炸弹下方的点
+            if height < 0: continue
+            
+            # --- 重算当时的暴露面积 ---
+            # 视线仰角的正弦值 sin(alpha) = Height / SlantRange = h_factor
+            # 我们的 Box Model 逻辑: 垂直权重 = |sin(alpha)|
+            current_area = calculate_dynamic_area(h_factor, a_top, a_side)
+            
+            all_points.append({
+                'r': r,
+                'h': height,
+                'area': current_area
+            })
+            
+    return all_points
 
 def generate_calculation_report(config_path, data_path, output_dir):
     """
-    Generates a detailed text report of the calculation in Chinese.
+    Generate the Tactical Analysis Report with comprehensive Metadata.
     """
-    # Load Config
+    print("Generating Comprehensive Tactical Analysis Report...")
+    
+    # 1. Load Config
+    if not os.path.exists(config_path):
+        print(f"Error: {config_path} not found.")
+        return
     with open(config_path, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
-        
-    # Load Results
+
+    # 2. Load Data
     if not os.path.exists(data_path):
-        print(f"Error: Data path {data_path} not found.")
+        print(f"Error: Data file {data_path} not found.")
         return
-        
     envelope = np.load(data_path)
     
-    # --- Data Analysis for Report ---
-    # Envelope is 2D Grid: Theta (Rows) x Phi (Cols)
-    # Theta: 0 to Pi (0=Up, Pi=Down, Pi/2=Horizon)
-    params = config['compute']
-    n_theta = int(params['spatial_bins'])
+    # 获取 Box Model 参数
+    box_cfg = config['target']['area_box_model']
+    a_top = box_cfg['top']
+    a_side = box_cfg['side']
     
-    # 1. Global Max (Omnidirectional limit)
-    max_safe_dist = np.max(envelope)
+    # 获取俯冲角参考 (取最大俯冲角作为最严酷几何条件)
+    dive_ref = config['scan']['angle']['max']
     
-    # 2. Vertical Aspect (Top/Bottom) -> Theta near 0 or Pi
-    # Slices: Top 5 rows and Bottom 5 rows
-    slice_width = max(1, n_theta // 10) # Top 10%
-    vert_slice_top = envelope[0:slice_width, :]
-    vert_slice_bot = envelope[-slice_width:, :]
-    max_dist_vertical = max(np.max(vert_slice_top), np.max(vert_slice_bot))
+    # --- 核心分析步骤 ---
+    points = scan_envelope_metrics(envelope, dive_ref, a_top, a_side)
     
-    # 3. Lateral Aspect (Side/Horizon) -> Theta near Pi/2 (Index N/2)
-    # Slice: Middle 10%
-    mid_idx = n_theta // 2
-    half_width = max(1, n_theta // 20)
-    lat_slice = envelope[mid_idx-half_width : mid_idx+half_width, :]
-    max_dist_lateral = np.max(lat_slice)
+    if not points:
+        print("Error: No valid data points found.")
+        return
+
+    # [分析 1] 全空域最大值 (Global Max)
+    global_max_point = max(points, key=lambda p: p['r'])
     
-    box_enabled = False
-    if 'area_box_model' in config['target'] and config['target']['area_box_model'].get('enabled', False):
-        box_enabled = True
-        ab = config['target']['area_box_model']
+    # [分析 2] 战术高度层最大值 (Tactical Band Max)
+    if 'tactical_band' in config['target']:
+        band_min = config['target']['tactical_band']['min_height']
+        band_max = config['target']['tactical_band']['max_height']
+    else:
+        band_min = 50.0
+        band_max = 150.0
     
-    # --- Generate Report ---
-    
-    # Generate Filename with Timestamp
+    band_points = [p for p in points if band_min <= p['h'] <= band_max]
+    tactical_point = max(band_points, key=lambda p: p['r']) if band_points else {'r': 0.0, 'h': 0.0, 'area': 0.0}
+
+    # Generate Path
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     report_filename = f"envelope_report_{ts}.txt"
     report_path = os.path.join(output_dir, report_filename)
-    
-    with open(report_path, 'w', encoding='utf-8') as f:
+
+    # --- 生成报告文本 ---
+    with open(report_path, "w", encoding="utf-8") as f:
         f.write("========================================================\n")
-        f.write("        MK82 安全包络线计算报告 (Safety Envelope Report)      \n")
+        f.write("       战术安全包络线分析报告 (Tactical Safety Report)      \n")
         f.write("========================================================\n\n")
         
         f.write(f"生成时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write(f"配置文件: {config_path}\n")
         f.write(f"数据文件: {data_path}\n\n")
-        
+
         f.write("--------------------------------------------------------\n")
-        f.write("1. 输入参数 (Input Parameters)\n")
+        f.write("1. 基础元数据 (Input Metadata)\n")
         f.write("--------------------------------------------------------\n")
         
         c = config['bomb']
@@ -76,60 +164,47 @@ def generate_calculation_report(config_path, data_path, output_dir):
         
         t = config['target']
         f.write("[目标与安全判据]\n")
-        if box_enabled:
-            ab = t['area_box_model']
-            f.write(f"  动态盒模型 (Box Model): 已启用 (ENABLED)\n")
-            f.write(f"    - 机腹/机背面积 (Top/Bottom): {ab['top']} m^2  (用于垂直威胁计算)\n")
-            f.write(f"    - 侧面面积 (Side/Lateral):    {ab['side']} m^2  (用于水平威胁计算)\n")
-            f.write(f"    - 迎头/尾部面积 (Front/Tail): {ab['front']} m^2\n")
-        else:
-            f.write(f"  固定暴露面积 (Fixed Area): {t.get('area', 'N/A')} m^2\n")
-            
-        f.write(f"  安全概率阈值 (Prob):    {t['safe_prob']}\n")
-        f.write(f"  致死动能门限 (Energy):  {t['energy_threshold']} J\n\n")
+        f.write(f"  动态盒模型 (Box Model): 已启用\n")
+        f.write(f"    - 机腹/机背投影: {a_top} m^2\n")
+        f.write(f"    - 侧面投影:     {a_side} m^2\n")
+        f.write(f"    - 迎头/尾部投影: {box_cfg.get('front', 4.0)} m^2\n")
+        f.write(f"  安全概率阈值:    {t['safe_prob']}\n")
+        f.write(f"  致死动能门限:    {t['energy_threshold']} J\n\n")
         
         s = config['scan']
-        f.write("[扫描工况]\n")
-        f.write(f"  投弹速度: {s['velocity']['min']} - {s['velocity']['max']} m/s\n")
-        f.write(f"  投弹俯冲角: {s['angle']['min']} - {s['angle']['max']} 度\n\n")
-            
+        f.write("[扫描范围]\n")
+        f.write(f"  落速 (m/s): {s['velocity']['min']} - {s['velocity']['max']} (步长: {s['velocity']['step']})\n")
+        f.write(f"  落角 (deg): {s['angle']['min']} - {s['angle']['max']} (步长: {s['angle']['step']})\n\n")
+
         f.write("--------------------------------------------------------\n")
-        f.write("2. 计算结果 (Calculation Results)\n")
+        f.write("2. 全空域平飞极值分析 (Global Level-Flight Peak)\n")
         f.write("--------------------------------------------------------\n")
-        
-        # 3.1 Global Max
-        f.write("[A] 综合最大安全距离 (Omnidirectional Max)\n")
-        f.write(f"    >>> {max_safe_dist:.2f} 米 <<<\n\n")
-        f.write("    [定义]: 全空域最坏情况下的最大危险距离。\n")
-        f.write("            (无论载机位于哪个方位，大于此距离即绝对安全)\n\n")
-        
-        # 3.2 Aspect Analysis
-        f.write("[B] 分量安全距离分析 (Aspect Analysis)\n")
-        f.write("    系统根据破片来袭方向，实时计算了对应的动态有效投影面积 (Effective Projected Area)：\n\n")
-        
-        # Vertical
-        f.write(f"    1. 垂直/高抛威胁 (Vertical Hazard) - 对应机腹/机背\n")
-        f.write(f"       有效暴露面积: {ab['top'] if box_enabled else t.get('area')} m^2\n")
-        f.write(f"       安全距离:     {max_dist_vertical:.2f} 米\n")
-        f.write(f"       [说明]: 来自正上方或正下方的破片威胁，通常决定了全向最大距离。\n")
-        if box_enabled:
-            f.write(f"       [战术意义]: 若执行俯冲拉起 (Dive Pull-up) 或直接穿越爆炸点上空 (Overflight)，\n")
-            f.write(f"                   此时机腹/机背完全暴露于威胁中，必须严格参考此安全距离。\n")
-        f.write("\n")
-        
-        # Lateral
-        f.write(f"    2. 侧向/水平威胁 (Lateral Hazard) - 对应侧面\n")
-        f.write(f"       有效暴露面积: {ab['side'] if box_enabled else t.get('area')} m^2  <-- 随着角度变化动态计算得到\n")
-        f.write(f"       安全距离:     {max_dist_lateral:.2f} 米\n")
-        if box_enabled:
-             f.write(f"       [战术意义]: 若飞行员保持 Snakeye 水平投放或侧向规避，\n")
-             f.write(f"                   可参考此距离 ({max_dist_lateral:.0f}m) 这里的风险显著低于垂直方向。\n")
-             
-        f.write("\n")
+        f.write("   [定义]: 假设飞机保持平飞姿态，扫描所有高度/方位，找到的最坏情况。\n")
+        f.write(f"   >>> 最大安全距离: {global_max_point['r']:.2f} 米 <<<\n\n")
+        f.write(f"   [关键状态回溯]:\n")
+        f.write(f"     - 发生高度 (Height):      {global_max_point['h']:.2f} 米\n")
+        # Calc angle carefully to avoid domain error
+        ratio = min(1.0, max(-1.0, global_max_point['h']/global_max_point['r']))
+        look_ang = math.degrees(math.asin(ratio))
+        f.write(f"     - 此时视线仰角 (Look Ang): {look_ang:.1f} 度\n")
+        f.write(f"     - 此时暴露面积 (Area):    {global_max_point['area']:.2f} m^2\n\n")
+        f.write(f"   [解读]: 如果仰角接近 90 度，说明危险源来自正下方载机暴露了最大机腹面积 ({a_top}m2)。\n\n")
+
         f.write("--------------------------------------------------------\n")
+        f.write("3. 战术高度层推荐 (Tactical Band Recommendation)\n")
+        f.write("--------------------------------------------------------\n")
+        f.write(f"   [预设战术条件]:\n")
+        f.write(f"     - 飞行高度层: {band_min}m 至 {band_max}m\n")
+        f.write(f"     - 飞行姿态:   保持平飞 (Wings Level)\n\n")
+        f.write(f"   >>> 战术推荐距离: {tactical_point['r']:.2f} 米 <<<\n\n")
+        f.write(f"   [关键状态回溯]:\n")
+        f.write(f"     - 发生高度 (Height):      {tactical_point['h']:.2f} 米\n")
+        f.write(f"     - 此时暴露面积 (Area):    {tactical_point['area']:.2f} m^2\n\n")
+        f.write(f"   [解读]: 此距离是该高度层内，综合最坏来袭角度与实际暴露面积后的安全红线。\n\n")
+        f.write("========================================================\n")
         f.write("报告结束 (END OF REPORT)\n")
         f.write("========================================================\n")
-        
+    
     print(f"Report generated: {report_path}")
 
 if __name__ == "__main__":
